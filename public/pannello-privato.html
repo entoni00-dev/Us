@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Registro</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: #0f1320; color: #e7e9f3;
+      font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #8ea8ff; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 60px; }
+    h1 { font-size: 1.3rem; margin: 0; letter-spacing: -.01em; }
+    .muted { color: #9aa0bd; }
+    .small { font-size: .85rem; }
+    /* login */
+    .gate { min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
+    .gate form { width: 100%; max-width: 320px; display: grid; gap: 12px; text-align: center; }
+    .lock { font-size: 2.4rem; }
+    input, button { font: inherit; }
+    input[type=password] { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid #2a3350;
+      background: #161c2e; color: #fff; text-align: center; letter-spacing: .35em; outline: none; }
+    input:focus { border-color: #5a74d8; }
+    .btn { border: 0; border-radius: 10px; padding: 10px 16px; background: #3a53c8; color: #fff; font-weight: 600; cursor: pointer; }
+    .btn:hover { background: #4760da; }
+    .btn.ghost { background: #1a2136; color: #cfd4ea; }
+    .err { color: #ff7b86; min-height: 1.2em; }
+    /* dashboard */
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+    .top .actions { display: flex; gap: 8px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 16px 0 22px; }
+    .stat { background: #161c2e; border: 1px solid #222a44; border-radius: 14px; padding: 12px 14px; }
+    .stat b { display: block; font-size: 1.5rem; }
+    .stat span { color: #9aa0bd; font-size: .8rem; }
+    .row { background: #141a2b; border: 1px solid #222a44; border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+    .row.lui { border-left: 3px solid #5a74d8; }
+    .row.lei { border-left: 3px solid #e06b8b; }
+    .rhead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .who { font-weight: 700; }
+    .who.lui { color: #9ab0ff; } .who.lei { color: #ff9cbb; }
+    .tag { font-size: .72rem; padding: 2px 8px; border-radius: 99px; background: #222a44; color: #c9cEEA; }
+    .tag.login { background: #243a2a; color: #9be3ad; }
+    .when { color: #9aa0bd; font-size: .85rem; margin-left: auto; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 6px 18px; margin-top: 10px; }
+    .f { font-size: .9rem; }
+    .f .k { color: #8089a8; font-size: .76rem; }
+    .f .v { word-break: break-word; }
+    .pin { display: inline-block; margin-top: 2px; }
+    details { margin-top: 10px; }
+    summary { cursor: pointer; color: #8ea8ff; font-size: .85rem; }
+    pre { background: #0c111d; border: 1px solid #222a44; border-radius: 10px; padding: 10px; overflow: auto; font-size: .78rem; color: #b9c0dd; }
+    .empty { text-align: center; color: #9aa0bd; padding: 50px 0; }
+  </style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <form id="gate-form">
+    <div class="lock">🔒</div>
+    <p class="muted">Area riservata</p>
+    <input id="pw" type="password" inputmode="numeric" autocomplete="off" placeholder="••••••" autofocus>
+    <button class="btn" type="submit">Entra</button>
+    <p id="gate-err" class="err"></p>
+  </form>
+</div>
+
+<div id="panel" class="wrap" hidden>
+  <div class="top">
+    <div>
+      <h1>Registro accessi · Us</h1>
+      <p class="muted small" id="sub"></p>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="refresh">Aggiorna</button>
+      <button class="btn ghost" id="logout">Esci</button>
+    </div>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div id="list"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+async function api(path, opts) {
+  const r = await fetch(path, { credentials: 'same-origin', headers: opts && opts.body ? { 'Content-Type': 'application/json' } : {}, ...opts });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || 'Errore');
+  return d;
+}
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+$('#gate-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('#gate-err').textContent = '';
+  try { await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password: $('#pw').value }) }); open(); }
+  catch (err) { $('#gate-err').textContent = err.message; $('#pw').value = ''; }
+});
+$('#logout').addEventListener('click', async () => { try { await api('/api/admin/logout', { method: 'POST' }); } catch {} location.reload(); });
+$('#refresh').addEventListener('click', load);
+
+function open() { $('#gate').hidden = true; $('#panel').hidden = false; load(); }
+
+function fmt(d) {
+  return new Date(d).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+function ago(d) {
+  const s = (Date.now() - new Date(d)) / 1000;
+  if (s < 60) return 'adesso'; if (s < 3600) return Math.floor(s/60)+' min fa';
+  if (s < 86400) return Math.floor(s/3600)+' h fa'; return Math.floor(s/86400)+' g fa';
+}
+
+async function load() {
+  $('#list').innerHTML = '<p class="empty">Carico…</p>';
+  let d;
+  try { d = await api('/api/admin/accesses'); }
+  catch (err) { if (String(err.message).includes('autoriz')) return location.reload(); $('#list').innerHTML = '<p class="empty">'+esc(err.message)+'</p>'; return; }
+  const a = d.accesses;
+  $('#sub').textContent = a.length + ' accessi registrati · aggiornato ' + fmt(d.now);
+  // statistiche
+  const uniq = new Set(a.map(x => x.ip)).size;
+  const lui = a.filter(x => x.who === 'lui').length, lei = a.filter(x => x.who === 'lei').length;
+  const withGps = a.filter(x => x.data && x.data.gps).length;
+  $('#stats').innerHTML = [
+    ['Accessi totali', a.length], ['IP diversi', uniq], ['Da LUI', lui], ['Da LEI', lei], ['Con posizione GPS', withGps],
+  ].map(([k,v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join('');
+
+  if (!a.length) { $('#list').innerHTML = '<p class="empty">Ancora nessun accesso.</p>'; return; }
+  $('#list').innerHTML = a.map(row).join('');
+}
+
+function field(k, v) { return v ? `<div class="f"><div class="k">${k}</div><div class="v">${v}</div></div>` : ''; }
+
+function row(x) {
+  const p = x.parsed || {}, dt = x.data || {}, g = x.geo || {};
+  const gi = g.ip || {}, gg = g.gps || {};
+  const gps = dt.gps;
+  let posizione = '';
+  if (gps) {
+    const map = `https://www.google.com/maps?q=${gps.lat},${gps.lng}`;
+    posizione = `<a class="pin" href="${map}" target="_blank" rel="noopener">📍 ${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}</a>`
+      + (gps.acc ? ` <span class="muted small">±${Math.round(gps.acc)} m</span>` : '')
+      + (gg.address ? `<div class="muted small">${esc(gg.address)}</div>` : '');
+  } else if (dt.gpsDenied) {
+    posizione = '<span class="muted">GPS negato dall\'utente</span>';
+  } else {
+    posizione = '<span class="muted">nessun GPS</span>';
+  }
+  let daIp = '';
+  if (gi.local) daIp = 'rete locale';
+  else if (gi.city || gi.country) daIp = `${gi.flag ? gi.flag + ' ' : ''}${esc([gi.city, gi.region, gi.country].filter(Boolean).join(', '))}`;
+  else if (gi.err) daIp = '—';
+
+  const details = {
+    schermo: dt.screen, finestra: dt.viewport, 'pixel ratio': dt.dpr,
+    lingua: dt.langs || dt.lang, fuso: dt.tz, 'CPU core': dt.cores, 'RAM (GB)': dt.memory,
+    rete: dt.conn, touch: dt.touch ? 'sì' : 'no', online: dt.online ? 'sì' : 'no',
+    piattaforma: dt.platform, modello: dt.model, 'versione OS': dt.osv, provenienza: dt.referrer,
+  };
+  return `<div class="row ${x.who}">
+    <div class="rhead">
+      <span class="who ${x.who}">${x.who === 'lui' ? 'LUI' : 'LEI'}</span>
+      <span class="tag ${x.event}">${x.event}</span>
+      <span class="when" title="${esc(fmt(x.created_at))}">${ago(x.created_at)}</span>
+    </div>
+    <div class="grid">
+      ${field('Posizione GPS', posizione)}
+      ${field('Posizione da IP', daIp)}
+      ${field('IP', esc(x.ip) + (gi.type ? ` <span class="muted small">(${esc(gi.type)})</span>` : ''))}
+      ${field('Operatore / rete', esc(gi.isp || gi.org || ''))}
+      ${field('Dispositivo', esc([p.device, p.os].filter(Boolean).join(' · ')))}
+      ${field('Browser', esc(p.browser))}
+      ${field('Quando', esc(fmt(x.created_at)))}
+    </div>
+    <details><summary>Tutti i dettagli del dispositivo</summary>
+      <div class="grid" style="margin-top:8px">
+        ${Object.entries(details).map(([k,v]) => field(k, esc(v == null || v === '' ? '' : v))).join('')}
+      </div>
+      <pre>${esc(x.ua)}</pre>
+    </details>
+  </div>`;
+}
+
+// Prova se già autenticato
+api('/api/admin/accesses').then(open).catch(() => { $('#gate').hidden = false; });
+</script>
+</body>
+</html>

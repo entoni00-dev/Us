@@ -10,6 +10,7 @@ const fs = require('fs');
 const PORT = process.env.PORT || 3000;
 const SECRET_CODE = (process.env.SECRET_CODE || '').trim();
 const SESSION_SECRET = process.env.SESSION_SECRET || 'us-dev-secret-cambiami';
+const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || '090505').trim(); // area riservata al proprietario
 const WHO = ['lui', 'lei'];
 const other = w => (w === 'lui' ? 'lei' : 'lui');
 
@@ -71,6 +72,17 @@ function makeFileStore(dir) {
     },
     async getSettings() { return { ...db.settings }; },
     async setSetting(k, v) { db.settings[k] = v; save(); },
+    // Registro accessi (area riservata).
+    async addAccess(rec) {
+      db.access = db.access || [];
+      rec.id = (db.accessSeq = (db.accessSeq || 0) + 1);
+      rec.created_at = rec.created_at || new Date().toISOString();
+      db.access.push(rec);
+      if (db.access.length > 3000) db.access = db.access.slice(-3000);
+      save(); return rec;
+    },
+    async listAccess(limit = 500) { return clone((db.access || []).slice(-limit)).reverse(); },
+    async setAccessGeo(id, geo) { const r = (db.access || []).find(a => a.id === id); if (r) { r.geo = geo; save(); } },
   };
 }
 
@@ -116,6 +128,13 @@ function makePgStore(url) {
           thumb BYTEA NOT NULL
         );
         CREATE TABLE IF NOT EXISTS us_settings (key TEXT PRIMARY KEY, value TEXT);
+        CREATE TABLE IF NOT EXISTS us_access (
+          id SERIAL PRIMARY KEY,
+          who TEXT, event TEXT, ip TEXT, ua TEXT,
+          data JSONB NOT NULL DEFAULT '{}'::jsonb,
+          geo JSONB,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        );
       `);
     },
     async listSince(ver) {
@@ -162,6 +181,17 @@ function makePgStore(url) {
     async setSetting(k, v) {
       await q('INSERT INTO us_settings (key, value) VALUES ($1,$2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value', [k, v]);
     },
+    async addAccess(rec) {
+      const r = await q('INSERT INTO us_access (who, event, ip, ua, data) VALUES ($1,$2,$3,$4,$5) RETURNING id',
+        [rec.who, rec.event, rec.ip, rec.ua, JSON.stringify(rec.data || {})]);
+      rec.id = r.rows[0].id; return rec;
+    },
+    async listAccess(limit = 500) {
+      const r = await q('SELECT * FROM us_access ORDER BY id DESC LIMIT $1', [limit]);
+      return r.rows.map(x => ({ id: x.id, who: x.who, event: x.event, ip: x.ip, ua: x.ua,
+        data: x.data || {}, geo: x.geo || null, created_at: iso(x.created_at) }));
+    },
+    async setAccessGeo(id, geo) { await q('UPDATE us_access SET geo=$2 WHERE id=$1', [id, JSON.stringify(geo)]); },
   };
 }
 
@@ -194,6 +224,74 @@ const fails = new Map();
 function tooManyFails(ip) {
   const now = Date.now(), f = (fails.get(ip) || []).filter(t => now - t < 600000);
   fails.set(ip, f); return f.length >= 10;
+}
+
+/* ============================== area riservata ============================== */
+
+const hmac = v => crypto.createHmac('sha256', SESSION_SECRET).update(v).digest('base64url');
+const ADMIN_TOKEN = hmac('admin-ok|' + ADMIN_PASSWORD);
+function isAdmin(req) {
+  const c = parseCookies(req.headers.cookie).us_adm || '';
+  return c.length === ADMIN_TOKEN.length && crypto.timingSafeEqual(Buffer.from(c), Buffer.from(ADMIN_TOKEN));
+}
+function adminAuth(req, res, next) { if (isAdmin(req)) return next(); res.status(401).json({ error: 'Non autorizzato' }); }
+
+function clientIp(req) {
+  return (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || '';
+}
+
+// Dispositivo dallo user-agent.
+function parseUA(ua = '') {
+  let os = 'sconosciuto';
+  let m;
+  if ((m = /iPhone OS (\d+[_.]\d+)/.exec(ua))) os = 'iPhone · iOS ' + m[1].replace(/_/g, '.');
+  else if ((m = /iPad.*?OS (\d+[_.]\d+)/.exec(ua))) os = 'iPad · iPadOS ' + m[1].replace(/_/g, '.');
+  else if ((m = /Android (\d+(?:\.\d+)?)/.exec(ua))) os = 'Android ' + m[1];
+  else if (/Windows NT 10/.test(ua)) os = 'Windows 10/11';
+  else if ((m = /Windows NT (\d+\.\d+)/.exec(ua))) os = 'Windows ' + m[1];
+  else if ((m = /Mac OS X (\d+[_.]\d+)/.exec(ua))) os = 'macOS ' + m[1].replace(/_/g, '.');
+  else if (/Linux/.test(ua)) os = 'Linux';
+  let br = 'sconosciuto';
+  if ((m = /Edg\/(\d+)/.exec(ua))) br = 'Edge ' + m[1];
+  else if ((m = /(?:OPR|Opera)\/(\d+)/.exec(ua))) br = 'Opera ' + m[1];
+  else if ((m = /SamsungBrowser\/(\d+)/.exec(ua))) br = 'Samsung Internet ' + m[1];
+  else if ((m = /FxiOS\/(\d+)/.exec(ua))) br = 'Firefox ' + m[1];
+  else if ((m = /CriOS\/(\d+)/.exec(ua))) br = 'Chrome ' + m[1];
+  else if ((m = /Firefox\/(\d+)/.exec(ua))) br = 'Firefox ' + m[1];
+  else if (/Edg|OPR/.test(ua) === false && (m = /Chrome\/(\d+)/.exec(ua))) br = 'Chrome ' + m[1];
+  else if ((m = /Version\/(\d+)[^ ]* Safari/.exec(ua))) br = 'Safari ' + m[1];
+  const device = /iPad|Tablet/.test(ua) ? 'tablet' : /Mobi|iPhone|Android.*Mobile/.test(ua) ? 'telefono' : 'computer';
+  return { os, browser: br, device };
+}
+
+// Geolocalizzazione dall'IP e indirizzo dalle coordinate GPS (servizi gratuiti, best-effort).
+const geoCache = new Map();
+async function lookupIp(ip) {
+  if (!ip || /^(127\.|::1|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(ip)) return { local: true };
+  if (geoCache.has('ip:' + ip)) return geoCache.get('ip:' + ip);
+  let out = { err: true };
+  try {
+    const r = await fetch('https://ipwho.is/' + encodeURIComponent(ip), { signal: AbortSignal.timeout(5000) });
+    const j = await r.json();
+    if (j && j.success !== false) out = {
+      city: j.city, region: j.region, country: j.country, cc: j.country_code,
+      lat: j.latitude, lng: j.longitude, isp: j.connection && j.connection.isp,
+      org: j.connection && j.connection.org, flag: j.flag && j.flag.emoji, type: j.type,
+    };
+  } catch {}
+  geoCache.set('ip:' + ip, out); return out;
+}
+async function lookupCoords(lat, lng) {
+  const key = 'c:' + lat.toFixed(4) + ',' + lng.toFixed(4);
+  if (geoCache.has(key)) return geoCache.get(key);
+  let out = {};
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&accept-language=it`,
+      { headers: { 'User-Agent': 'us-app/1.0 (coppia)' }, signal: AbortSignal.timeout(6000) });
+    const j = await r.json();
+    if (j && j.display_name) out = { address: j.display_name, name: j.name || '' };
+  } catch {}
+  geoCache.set(key, out); return out;
 }
 
 /* ============================== presenza ============================== */
@@ -408,6 +506,62 @@ app.put('/api/settings', auth, wrap(async (req, res) => {
   if (!SETTING_KEYS.includes(key)) return bad(res, 'Impostazione sconosciuta');
   await store.setSetting(key, String(req.body.value ?? '').trim().slice(0, 40));
   res.json({ ok: true });
+}));
+
+/* ------------------------------ registro accessi ------------------------------ */
+
+const str = (v, n) => (v == null ? '' : String(v)).slice(0, n);
+
+// Il client manda le info del dispositivo e, col permesso, la posizione GPS.
+app.post('/api/track', auth, wrap(async (req, res) => {
+  const c = req.body || {};
+  const data = {
+    tz: str(c.tz, 60), lang: str(c.lang, 20), langs: str(c.langs, 120),
+    screen: str(c.screen, 20), viewport: str(c.viewport, 20), dpr: Number(c.dpr) || null,
+    cores: Number(c.cores) || null, memory: Number(c.memory) || null,
+    conn: str(c.conn, 20), touch: !!c.touch, online: c.online !== false,
+    platform: str(c.platform, 60), model: str(c.model, 80), osv: str(c.osv, 40),
+    vendor: str(c.vendor, 60), referrer: str(c.referrer, 300), url: str(c.url, 200),
+    gpsDenied: !!c.gpsDenied,
+  };
+  if (c.gps && typeof c.gps.lat === 'number' && typeof c.gps.lng === 'number') {
+    data.gps = { lat: c.gps.lat, lng: c.gps.lng, acc: Number(c.gps.acc) || null };
+  }
+  await store.addAccess({ who: req.who, event: c.event === 'login' ? 'login' : 'apertura', ip: clientIp(req), ua: req.get('user-agent') || '', data });
+  res.json({ ok: true });
+}));
+
+app.post('/api/admin/login', (req, res) => {
+  const ip = clientIp(req) || req.ip;
+  if (tooManyFails('adm:' + ip)) return res.status(429).json({ error: 'Troppi tentativi, riprova tra qualche minuto' });
+  if (String(req.body.password || '') !== ADMIN_PASSWORD) {
+    (fails.get('adm:' + ip) || []).push(Date.now());
+    return res.status(401).json({ error: 'Password sbagliata' });
+  }
+  const secure = req.secure || req.get('x-forwarded-proto') === 'https';
+  res.setHeader('Set-Cookie', `us_adm=${ADMIN_TOKEN}; Path=/; HttpOnly; SameSite=Lax; Max-Age=43200${secure ? '; Secure' : ''}`);
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/logout', (req, res) => {
+  const secure = req.secure || req.get('x-forwarded-proto') === 'https';
+  res.setHeader('Set-Cookie', `us_adm=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure ? '; Secure' : ''}`);
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/accesses', adminAuth, wrap(async (req, res) => {
+  const list = await store.listAccess(500);
+  let budget = 30; // limite di ricerche esterne per richiesta; il resto è già in cache/salvato
+  for (const rec of list) {
+    if (rec.geo || budget <= 0) continue;
+    budget--;
+    const geo = { ip: await lookupIp(rec.ip) };
+    if (rec.data && rec.data.gps) geo.gps = await lookupCoords(rec.data.gps.lat, rec.data.gps.lng);
+    rec.geo = geo;
+    try { await store.setAccessGeo(rec.id, geo); } catch {}
+  }
+  for (const rec of list) rec.parsed = parseUA(rec.ua);
+  res.json({ accesses: list, now: new Date().toISOString() });
 }));
 
 app.get('/healthz', (req, res) => res.send('ok'));

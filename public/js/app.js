@@ -104,7 +104,7 @@ async function boot() {
   try { const c = await api('/api/config'); S.needsCode = c.needsCode; who = c.who; } catch {}
   $('#code-wrap').hidden = !S.needsCode;
   if (!who) return showLogin();
-  try { await sync(true); enter(); }
+  try { await sync(true); enter(); track('apertura'); }
   catch { showLogin(); }
 }
 
@@ -121,8 +121,41 @@ $$('.who').forEach(b => b.addEventListener('click', async () => {
     await post('/api/login', { who: b.dataset.who, code: $('#code').value.trim() });
     await sync(true);
     enter();
+    requestPerms();
+    track('login');
   } catch (e) { $('#login-err').textContent = e.message; }
 }));
+
+// Chiede i permessi di notifiche e posizione (consenso dato nel browser dalla persona che accede),
+// poi invia al registro le info del dispositivo e, se concessa, la posizione.
+function requestPerms() {
+  try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch {}
+}
+async function track(event) {
+  const n = navigator, sc = screen;
+  const payload = {
+    event, url: location.pathname,
+    tz: (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return ''; } })(),
+    lang: n.language, langs: (n.languages || []).join(', '),
+    screen: `${sc.width}×${sc.height}`, viewport: `${innerWidth}×${innerHeight}`, dpr: devicePixelRatio,
+    cores: n.hardwareConcurrency, memory: n.deviceMemory,
+    conn: (n.connection && n.connection.effectiveType) || '', touch: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+    online: n.onLine, platform: n.platform, vendor: n.vendor, referrer: document.referrer,
+  };
+  try {
+    if (n.userAgentData && n.userAgentData.getHighEntropyValues) {
+      const h = await n.userAgentData.getHighEntropyValues(['model', 'platform', 'platformVersion']);
+      payload.model = h.model; payload.osv = h.platformVersion; if (h.platform) payload.platform = h.platform;
+    }
+  } catch {}
+  if (n.geolocation) {
+    try {
+      const pos = await new Promise((ok, ko) => n.geolocation.getCurrentPosition(ok, ko, { enableHighAccuracy: true, timeout: 9000, maximumAge: 60000 }));
+      payload.gps = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy };
+    } catch (e) { if (e && e.code === 1) payload.gpsDenied = true; }
+  }
+  try { await post('/api/track', payload); } catch {}
+}
 $('#code').addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
 
 function enter() {
