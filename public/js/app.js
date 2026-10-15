@@ -230,7 +230,7 @@ function route() {
   render();
   if (changed) {
     if (v === 'chat') { scrollChat(); if (!touch) $('#chat-input').focus({ preventScroll: true }); }
-    else window.scrollTo(0, 0);
+    else { window.scrollTo(0, 0); $('#main').scrollTop = 0; }
   }
   poll();
 }
