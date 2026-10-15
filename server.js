@@ -207,7 +207,7 @@ app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use('/api/photos', express.json({ limit: '12mb' }));
 app.use(express.json({ limit: '200kb' }));
-app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'], maxAge: '1h' }));
+app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
 const wrap = fn => (req, res) => fn(req, res).catch(err => {
   console.error(err);
