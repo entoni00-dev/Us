@@ -3,154 +3,380 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Noi Due</title>
+  <title>Us</title>
+  <meta name="description" content="Il nostro posto, anche da lontano.">
   <meta name="theme-color" content="#f6efe6" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#1b1416" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Noi Due">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Us">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=DM+Sans:wght@400;500;600&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
-  <!-- ===================== ACCESSO ===================== -->
-  <section id="login" class="screen login" hidden>
-    <div class="login-card">
-      <svg class="login-mark" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 54s-20-12.4-20-27.2C12 19.6 17.4 14 24 14c3.6 0 6.4 1.8 8 4.6C33.6 15.8 36.4 14 40 14c6.6 0 12 5.6 12 12.8C52 41.6 32 54 32 54z"/></svg>
-      <h1>Noi Due</h1>
-      <p class="muted">Un posticino solo nostro, per quando siamo lontani.</p>
-      <p class="label">Chi sei?</p>
-      <div class="who-pick">
-        <button class="who" data-who="lui">LUI</button>
-        <button class="who" data-who="lei">LEI</button>
-      </div>
-      <div id="code-wrap" hidden>
-        <label class="label" for="code">Codice segreto</label>
-        <input id="code" type="password" autocomplete="current-password" placeholder="il nostro codice">
-      </div>
-      <p id="login-err" class="err" role="alert"></p>
+<!-- ============================ ACCESSO ============================ -->
+<section id="login" class="login" hidden>
+  <div class="login-card">
+    <div class="logo-big" aria-hidden="true">us<span>♥</span></div>
+    <p class="muted">Il nostro posto, anche da lontano.</p>
+    <p class="eyebrow">Chi sei?</p>
+    <div class="who-pick">
+      <button class="who" data-who="lui"><span class="who-n">LUI</span></button>
+      <button class="who" data-who="lei"><span class="who-n">LEI</span></button>
     </div>
-  </section>
+    <div id="code-wrap" class="code-wrap" hidden>
+      <label class="eyebrow" for="code">Il nostro codice</label>
+      <input id="code" type="password" autocomplete="current-password" placeholder="••••••">
+    </div>
+    <p id="login-err" class="err" role="alert"></p>
+  </div>
+</section>
 
-  <!-- ===================== APP ===================== -->
-  <div id="app" hidden>
-    <header class="top">
-      <span class="brand">Noi Due</span>
-      <span id="me-chip" class="chip"></span>
-    </header>
+<!-- ============================ APP ============================ -->
+<div id="app" class="shell" hidden>
 
-    <main>
-      <!-- CASA -->
-      <section class="screen" data-tab="home">
-        <p class="hello" id="hello"></p>
+  <aside class="side" aria-label="Menu">
+    <a class="logo" href="#casa">us<span>♥</span></a>
+    <nav class="side-nav">
+      <a href="#casa" data-nav="casa"><i data-ic="home"></i>Casa</a>
+      <a href="#chat" data-nav="chat"><i data-ic="chat"></i>Chat<b class="badge" data-badge="chat"></b></a>
+      <a href="#lettere" data-nav="lettere"><i data-ic="letter"></i>Lettere<b class="badge" data-badge="lettere"></b></a>
+      <a href="#album" data-nav="album"><i data-ic="photo"></i>Album<b class="badge" data-badge="album"></b></a>
+      <a href="#calma" data-nav="calma" class="calm-link"><i data-ic="leaf"></i>Calma</a>
+      <a href="#insieme" data-nav="insieme"><i data-ic="list"></i>Insieme</a>
+      <a href="#domande" data-nav="domande"><i data-ic="question"></i>Domande<b class="badge" data-badge="domande"></b></a>
+      <a href="#impostazioni" data-nav="impostazioni"><i data-ic="gear"></i>Impostazioni</a>
+    </nav>
+    <div class="side-partner" id="side-partner"></div>
+  </aside>
 
-        <div class="heart-zone">
-          <button id="ping" class="heart-btn" aria-label="Ti penso">
-            <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 54s-20-12.4-20-27.2C12 19.6 17.4 14 24 14c3.6 0 6.4 1.8 8 4.6C33.6 15.8 36.4 14 40 14c6.6 0 12 5.6 12 12.8C52 41.6 32 54 32 54z"/></svg>
-          </button>
-          <p class="heart-caption">Tocca quando la pensi</p>
-          <p id="last-ping" class="last-ping"></p>
+  <header class="top">
+    <a class="logo" href="#casa">us<span>♥</span></a>
+    <div class="top-r">
+      <a href="#calma" class="icon-btn calm" aria-label="Calma"><i data-ic="leaf"></i></a>
+      <a href="#impostazioni" class="me-chip" id="me-chip"></a>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ============ CASA ============ -->
+    <section class="view" data-view="casa">
+      <div class="home-grid">
+        <div class="home-main">
+          <p class="date-line" id="date-line"></p>
+          <h1 class="hello" id="hello"></h1>
+
+          <div id="sos-banner" class="sos-banner" hidden></div>
+
+          <div class="partner-card" id="partner-card"></div>
+
+          <div class="heart-zone">
+            <button id="ping" class="heart-btn" aria-label="Ti penso">
+              <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 54s-20-12.4-20-27.2C12 19.6 17.4 14 24 14c3.6 0 6.4 1.8 8 4.6C33.6 15.8 36.4 14 40 14c6.6 0 12 5.6 12 12.8C52 41.6 32 54 32 54z"/></svg>
+            </button>
+            <p class="heart-caption" id="heart-caption">Tocca quando ci pensi</p>
+            <p class="heart-counts" id="heart-counts"></p>
+          </div>
+
+          <div class="card mood-card">
+            <p class="eyebrow">Come stai oggi?</p>
+            <div class="mood-row" id="mood-row"></div>
+            <form id="mood-note-form" class="mood-note" hidden>
+              <input id="mood-note" maxlength="140" placeholder="Vuoi aggiungere due parole? (facoltativo)">
+              <button class="btn sm">Ok</button>
+            </form>
+          </div>
         </div>
 
-        <div class="stats">
-          <div class="stat"><span id="today-me" class="num">0</span><span class="cap">i tuoi pensieri oggi</span></div>
-          <div class="stat"><span id="today-them" class="num">0</span><span id="today-them-cap" class="cap">i suoi pensieri oggi</span></div>
+        <div class="home-side">
+          <a href="#calma" class="card calm-card">
+            <div>
+              <p class="eyebrow">Calma</p>
+              <p class="calm-card-t">La testa sta correndo?</p>
+              <p class="muted small">Una frase, un respiro, o chiamalo/a.</p>
+            </div>
+            <i data-ic="leaf"></i>
+          </a>
+
+          <a href="#domande" class="card q-card" id="q-card"></a>
+
+          <div class="card phrase-card" id="phrase-card"></div>
+
+          <a href="#album" class="card memory-card" id="memory-card" hidden></a>
+
+          <div class="mini-stats" id="mini-stats"></div>
         </div>
+      </div>
+    </section>
 
-        <div class="card countdown" id="countdown-card">
-          <p class="card-k">Prossimo abbraccio</p>
-          <div id="countdown" class="countdown-v"></div>
-        </div>
+    <!-- ============ CHAT ============ -->
+    <section class="view chat-view" data-view="chat" hidden>
+      <div class="chat-head" id="chat-head"></div>
+      <div class="chat-scroll" id="chat-scroll">
+        <div class="chat" id="chat"></div>
+        <div class="typing" id="typing" hidden><span></span><span></span><span></span></div>
+      </div>
+      <div class="emoji-bar" id="emoji-bar" hidden></div>
+      <form id="chat-form" class="composer">
+        <button type="button" class="icon-btn" id="emoji-toggle" aria-label="Emoji">☺</button>
+        <textarea id="chat-input" rows="1" maxlength="4000" placeholder="Scrivi un messaggino…" enterkeyhint="send"></textarea>
+        <button class="send" aria-label="Invia"><i data-ic="send"></i></button>
+      </form>
+    </section>
 
-        <div class="card" id="together-card" hidden>
-          <p class="card-k">Insieme da</p>
-          <p id="together" class="big-serif"></p>
-        </div>
-      </section>
-
-      <!-- MESSAGGI -->
-      <section class="screen chat-screen" data-tab="chat" hidden>
-        <div id="chat" class="chat" aria-live="polite"></div>
-        <form id="chat-form" class="composer">
-          <textarea id="chat-input" rows="1" maxlength="2000" placeholder="Scrivi un messaggino…"></textarea>
-          <button class="send" aria-label="Invia">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 21 3l-8.5 18-2-7.5z"/></svg>
-          </button>
-        </form>
-      </section>
-
-      <!-- LETTERE -->
-      <section class="screen" data-tab="letters" hidden>
-        <div class="row-between">
+    <!-- ============ LETTERE ============ -->
+    <section class="view" data-view="lettere" hidden>
+      <div class="view-head">
+        <div>
           <h2>Lettere</h2>
-          <button id="new-letter" class="btn">Scrivi una lettera</button>
+          <p class="muted">Le parole lente, quelle che si rileggono.</p>
         </div>
-        <div id="letters" class="letters"></div>
-      </section>
+        <button class="btn" id="write-letter"><i data-ic="pen"></i>Scrivi</button>
+      </div>
+      <div class="seg" id="letter-tabs" role="tablist">
+        <button data-lt="ricevute" class="on">Per te</button>
+        <button data-lt="aprile">Apri quando…</button>
+        <button data-lt="scritte">Scritte da te</button>
+      </div>
+      <div id="letters" class="letters"></div>
+    </section>
 
-      <!-- NOI -->
-      <section class="screen" data-tab="us" hidden>
-        <h2>Noi</h2>
-        <form id="settings" class="settings">
+    <!-- ============ ALBUM ============ -->
+    <section class="view" data-view="album" hidden>
+      <div class="view-head">
+        <div>
+          <h2>Album</h2>
+          <p class="muted" id="album-sub">Le nostre foto, in ordine di tempo.</p>
+        </div>
+        <label class="btn" for="photo-input"><i data-ic="plus"></i>Aggiungi</label>
+        <input id="photo-input" type="file" accept="image/*" multiple hidden>
+      </div>
+      <div id="album" class="album"></div>
+    </section>
+
+    <!-- ============ CALMA ============ -->
+    <section class="view calm-view" data-view="calma" hidden>
+      <div class="calm-hero">
+        <h2>Respira.<br><em>Sono qui.</em></h2>
+        <p class="muted">Quello che senti è reale. Quello che temi, non per forza.</p>
+      </div>
+
+      <div class="calm-grid">
+        <div class="card jar-card">
+          <p class="eyebrow">Il barattolo</p>
+          <div class="jar-slip" id="jar-slip"></div>
+          <button class="btn" id="jar-draw">Pesca una frase</button>
+        </div>
+
+        <div class="card breathe-card">
+          <p class="eyebrow">Respiriamo insieme</p>
+          <div class="breathe" id="breathe">
+            <div class="breathe-ring"></div>
+            <div class="breathe-dot"></div>
+            <p class="breathe-t" id="breathe-t">Pronto/a?</p>
+          </div>
+          <button class="btn ghost" id="breathe-btn">Inizia · 1 minuto</button>
+        </div>
+
+        <div class="card sos-card">
+          <p class="eyebrow">Non tenertela dentro</p>
+          <p class="sos-t">Dillo, invece di rimuginarci.</p>
+          <p class="muted small" id="sos-sub"></p>
+          <form id="sos-form">
+            <textarea id="sos-note" maxlength="300" rows="2" placeholder="Cosa ti passa per la testa? (facoltativo)"></textarea>
+            <button class="btn sos-btn">Ho bisogno di te</button>
+          </form>
+          <p class="sos-status" id="sos-status"></p>
+        </div>
+
+        <div class="card ground-card">
+          <p class="eyebrow">Quando la testa corre</p>
+          <ol class="ground" id="ground"></ol>
+          <div id="when-links"></div>
+        </div>
+
+        <div class="card mine-card">
+          <p class="eyebrow">Le tue frasi nel suo barattolo</p>
+          <p class="muted small" id="mine-sub"></p>
+          <form id="comfort-form" class="inline-form">
+            <textarea id="comfort-input" maxlength="500" rows="2" placeholder="Scrivi una frase che le/gli farà bene nei momenti difficili…"></textarea>
+            <button class="btn">Metti nel barattolo</button>
+          </form>
+          <p class="ideas" id="comfort-ideas"></p>
+          <ul class="mine-list" id="mine-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ INSIEME ============ -->
+    <section class="view" data-view="insieme" hidden>
+      <div class="view-head">
+        <div>
+          <h2>Insieme</h2>
+          <p class="muted">Le cose da fare, vedere e sognare, in due.</p>
+        </div>
+      </div>
+      <div class="seg" id="list-tabs"></div>
+      <form id="todo-form" class="todo-form">
+        <input id="todo-input" maxlength="200" autocomplete="off">
+        <button class="btn">Aggiungi</button>
+      </form>
+      <ul id="todos" class="todos"></ul>
+    </section>
+
+    <!-- ============ DOMANDE ============ -->
+    <section class="view" data-view="domande" hidden>
+      <div class="view-head">
+        <div>
+          <h2>La domanda di oggi</h2>
+          <p class="muted">La sua risposta si svela solo dopo che hai scritto la tua.</p>
+        </div>
+      </div>
+      <div class="card q-today" id="q-today"></div>
+      <h3 class="sub-h">Le domande passate</h3>
+      <div id="q-archive" class="q-archive"></div>
+    </section>
+
+    <!-- ============ NOI (hub mobile) ============ -->
+    <section class="view" data-view="noi" hidden>
+      <h2>Noi</h2>
+      <div class="hub">
+        <a href="#calma" class="hub-tile calm"><i data-ic="leaf"></i><b>Calma</b><span>Frasi, respiro, “ho bisogno di te”</span></a>
+        <a href="#insieme" class="hub-tile"><i data-ic="list"></i><b>Insieme</b><span>Liste da fare in due</span></a>
+        <a href="#domande" class="hub-tile"><i data-ic="question"></i><b>Domande</b><span>Una al giorno, per conoscersi</span><b class="badge" data-badge="domande"></b></a>
+        <a href="#impostazioni" class="hub-tile"><i data-ic="gear"></i><b>Impostazioni</b><span>Nomi, date, notifiche</span></a>
+      </div>
+    </section>
+
+    <!-- ============ IMPOSTAZIONI ============ -->
+    <section class="view" data-view="impostazioni" hidden>
+      <h2>Impostazioni</h2>
+      <form id="settings" class="settings card">
+        <div class="two">
           <label>Il nome di LUI<input name="name_lui" maxlength="30" placeholder="LUI"></label>
           <label>Il nome di LEI<input name="name_lei" maxlength="30" placeholder="LEI"></label>
-          <label>Insieme dal<input name="together_since" type="date"></label>
-          <label>Prossimo incontro<input name="next_meeting" type="datetime-local"></label>
-          <button class="btn">Salva</button>
-          <p id="settings-ok" class="ok" role="status"></p>
-        </form>
-        <div class="card soft">
-          <p class="card-k">Notifiche</p>
-          <p class="muted small">Con il sito aperto (anche in un'altra scheda) ti avviso quando arriva qualcosa.</p>
-          <button id="notif" class="btn ghost">Attiva notifiche</button>
         </div>
-        <button id="logout" class="btn ghost">Cambia profilo</button>
-      </section>
-    </main>
+        <label>Insieme dal<input name="together_since" type="date"></label>
+        <label>Prossima volta che vi vedete <span class="muted small">(facoltativo: se non c'è una data, lascia vuoto)</span>
+          <input name="next_meeting" type="date">
+        </label>
+        <div class="row"><button class="btn">Salva</button><span id="settings-ok" class="ok" role="status"></span></div>
+      </form>
 
-    <nav class="tabs">
-      <button data-go="home" class="on"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.6C5 7.9 6.9 6 9.2 6c1.2 0 2.2.6 2.8 1.6.6-1 1.6-1.6 2.8-1.6C17.1 6 19 7.9 19 10.4 19 15.6 12 20 12 20z"/></svg><span>Casa</span></button>
-      <button data-go="chat"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Messaggi</span><i class="badge" data-badge="chat"></i></button>
-      <button data-go="letters"><svg viewBox="0 0 24 24"><path d="M3 6h18v12H3z M3 6l9 7 9-7"/></svg><span>Lettere</span><i class="badge" data-badge="letters"></i></button>
-      <button data-go="us"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><circle cx="16" cy="10" r="2.5"/><path d="M3.5 19c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5M14 15.2c.6-.4 1.3-.7 2-.7 2 0 3.6 1.3 4.2 3.5"/></svg><span>Noi</span></button>
-    </nav>
-  </div>
-
-  <!-- Lettera: lettura -->
-  <dialog id="letter-view" class="sheet">
-    <article class="paper">
-      <p id="lv-meta" class="paper-meta"></p>
-      <div id="lv-body" class="paper-body"></div>
-      <p id="lv-sign" class="paper-sign"></p>
-    </article>
-    <div class="sheet-actions">
-      <button id="lv-delete" class="btn ghost danger" hidden>Elimina</button>
-      <button class="btn" data-close>Chiudi</button>
-    </div>
-  </dialog>
-
-  <!-- Lettera: scrittura -->
-  <dialog id="letter-write" class="sheet">
-    <form id="letter-form" method="dialog">
-      <h3>Una lettera per te</h3>
-      <textarea id="lw-body" class="paper-input" maxlength="20000" placeholder="Cara…" required></textarea>
-      <label class="small">Da aprire il (facoltativo)
-        <input id="lw-open" type="datetime-local">
-      </label>
-      <p class="muted small">Se scegli una data, la lettera resta sigillata fino ad allora.</p>
-      <div class="sheet-actions">
-        <button type="button" class="btn ghost" data-close>Annulla</button>
-        <button class="btn" value="send">Spedisci</button>
+      <div class="card">
+        <p class="eyebrow">Aspetto</p>
+        <div class="seg" id="theme-seg">
+          <button data-theme-set="auto">Automatico</button>
+          <button data-theme-set="light">Chiaro</button>
+          <button data-theme-set="dark">Scuro</button>
+        </div>
       </div>
-    </form>
-  </dialog>
 
-  <div id="toast" class="toast" role="status"></div>
-  <script src="/app.js"></script>
+      <div class="card">
+        <p class="eyebrow">Notifiche</p>
+        <p class="muted small">Ti avviso quando arriva qualcosa mentre Us è aperto, anche in un'altra scheda.</p>
+        <button id="notif" class="btn ghost">Attiva notifiche</button>
+      </div>
+
+      <div class="card">
+        <p class="eyebrow">Su telefono e tablet</p>
+        <p class="muted small">Dal browser: <b>Condividi → Aggiungi a schermata Home</b> (iPhone/iPad) oppure <b>⋮ → Installa app</b> (Android). Si apre come un'app vera.</p>
+      </div>
+
+      <button id="logout" class="btn ghost">Esci / cambia profilo</button>
+    </section>
+  </main>
+
+  <nav class="tabs" aria-label="Menu">
+    <a href="#casa" data-nav="casa"><i data-ic="home"></i><span>Casa</span></a>
+    <a href="#chat" data-nav="chat"><i data-ic="chat"></i><span>Chat</span><b class="badge" data-badge="chat"></b></a>
+    <a href="#lettere" data-nav="lettere"><i data-ic="letter"></i><span>Lettere</span><b class="badge" data-badge="lettere"></b></a>
+    <a href="#album" data-nav="album"><i data-ic="photo"></i><span>Album</span><b class="badge" data-badge="album"></b></a>
+    <a href="#noi" data-nav="noi"><i data-ic="us"></i><span>Noi</span><b class="badge" data-badge="noi"></b></a>
+  </nav>
+</div>
+
+<!-- ============================ DIALOGHI ============================ -->
+<dialog id="dlg-read" class="sheet">
+  <article class="paper">
+    <p class="paper-meta" id="rd-meta"></p>
+    <h3 class="paper-title" id="rd-title"></h3>
+    <div class="paper-body" id="rd-body"></div>
+    <p class="paper-sign" id="rd-sign"></p>
+  </article>
+  <div class="sheet-actions">
+    <div class="react-row" id="rd-react"></div>
+    <span class="grow"></span>
+    <button class="btn ghost danger" id="rd-delete" hidden>Elimina</button>
+    <button class="btn" data-close>Chiudi</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-write" class="sheet">
+  <form id="write-form">
+    <h3 id="wr-h">Una lettera</h3>
+    <div class="seg small-seg" id="wr-type">
+      <button type="button" data-wt="letter" class="on">Lettera</button>
+      <button type="button" data-wt="when">Apri quando…</button>
+    </div>
+    <div id="wr-when-wrap" hidden>
+      <p class="eyebrow">Apri quando…</p>
+      <div class="when-pick" id="wr-when"></div>
+    </div>
+    <input id="wr-title" maxlength="80" placeholder="Titolo (facoltativo)">
+    <textarea id="wr-body" class="paper-input" maxlength="30000" required></textarea>
+    <label id="wr-seal-wrap" class="small">Sigillata fino al (facoltativo)
+      <input id="wr-open" type="datetime-local">
+    </label>
+    <p class="muted small" id="wr-hint"></p>
+    <div class="sheet-actions">
+      <span class="muted small" id="wr-draft"></span>
+      <span class="grow"></span>
+      <button type="button" class="btn ghost" data-close>Annulla</button>
+      <button class="btn">Spedisci</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-upload" class="sheet">
+  <h3>Nuove foto</h3>
+  <div id="up-list" class="up-list"></div>
+  <div class="sheet-actions">
+    <span class="muted small" id="up-status"></span>
+    <span class="grow"></span>
+    <button type="button" class="btn ghost" data-close id="up-cancel">Annulla</button>
+    <button class="btn" id="up-go">Carica</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-photo" class="lightbox">
+  <button class="lb-close icon-btn" data-close aria-label="Chiudi">✕</button>
+  <button class="lb-nav prev icon-btn" id="lb-prev" aria-label="Precedente">‹</button>
+  <button class="lb-nav next icon-btn" id="lb-next" aria-label="Successiva">›</button>
+  <figure class="lb-fig">
+    <img id="lb-img" alt="">
+    <figcaption>
+      <p id="lb-cap" class="lb-cap"></p>
+      <p id="lb-meta" class="lb-meta"></p>
+      <div class="lb-actions">
+        <div class="react-row" id="lb-react"></div>
+        <span class="grow"></span>
+        <button class="icon-btn" id="lb-edit" hidden aria-label="Modifica didascalia"><i data-ic="pen"></i></button>
+        <a class="icon-btn" id="lb-dl" aria-label="Scarica"><i data-ic="download"></i></a>
+        <button class="icon-btn" id="lb-del" hidden aria-label="Elimina"><i data-ic="trash"></i></button>
+      </div>
+    </figcaption>
+  </figure>
+</dialog>
+
+<div id="toast" class="toast" role="status"></div>
+<script type="module" src="/js/app.js"></script>
 </body>
 </html>

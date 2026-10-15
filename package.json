@@ -1,7 +1,7 @@
 {
-  "name": "noi-due",
+  "name": "us",
   "version": "1.0.0",
-  "description": "Il nostro posticino: ti penso, messaggini e lettere per una relazione a distanza",
+  "description": "Us: il nostro posto, anche da lontano",
   "main": "server.js",
   "private": true,
   "scripts": {

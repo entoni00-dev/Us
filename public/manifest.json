@@ -1,7 +1,7 @@
 {
-  "name": "Noi Due",
-  "short_name": "Noi Due",
-  "description": "Il nostro posticino: ti penso, messaggini e lettere",
+  "name": "Us",
+  "short_name": "Us",
+  "description": "Il nostro posto, anche da lontano.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f6efe6",
