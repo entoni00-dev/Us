@@ -1,0 +1,15 @@
+{
+  "name": "Noi Due",
+  "short_name": "Noi Due",
+  "description": "Il nostro posticino: ti penso, messaggini e lettere",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6efe6",
+  "theme_color": "#9b2c3b",
+  "lang": "it",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

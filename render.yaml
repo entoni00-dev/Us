@@ -1,0 +1,16 @@
+# Blueprint Render: un solo servizio web gratuito.
+# I dati NON stanno su Render (il disco free si azzera e il Postgres free scade dopo 30 giorni):
+# incolla in DATABASE_URL la stringa di connessione di Neon (gratuito, non scade).
+services:
+  - type: web
+    name: noi-due
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: DATABASE_URL
+        sync: false   # Render te la chiede al primo deploy
+      - key: SECRET_CODE
+        sync: false   # facoltativo: lascia vuoto per accesso libero

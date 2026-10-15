@@ -1,0 +1,17 @@
+{
+  "name": "noi-due",
+  "version": "1.0.0",
+  "description": "Il nostro posticino: ti penso, messaggini e lettere per una relazione a distanza",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  }
+}

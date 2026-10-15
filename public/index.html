@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Noi Due</title>
+  <meta name="theme-color" content="#f6efe6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b1416" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Noi Due">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=DM+Sans:wght@400;500;600&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <!-- ===================== ACCESSO ===================== -->
+  <section id="login" class="screen login" hidden>
+    <div class="login-card">
+      <svg class="login-mark" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 54s-20-12.4-20-27.2C12 19.6 17.4 14 24 14c3.6 0 6.4 1.8 8 4.6C33.6 15.8 36.4 14 40 14c6.6 0 12 5.6 12 12.8C52 41.6 32 54 32 54z"/></svg>
+      <h1>Noi Due</h1>
+      <p class="muted">Un posticino solo nostro, per quando siamo lontani.</p>
+      <p class="label">Chi sei?</p>
+      <div class="who-pick">
+        <button class="who" data-who="lui">LUI</button>
+        <button class="who" data-who="lei">LEI</button>
+      </div>
+      <div id="code-wrap" hidden>
+        <label class="label" for="code">Codice segreto</label>
+        <input id="code" type="password" autocomplete="current-password" placeholder="il nostro codice">
+      </div>
+      <p id="login-err" class="err" role="alert"></p>
+    </div>
+  </section>
+
+  <!-- ===================== APP ===================== -->
+  <div id="app" hidden>
+    <header class="top">
+      <span class="brand">Noi Due</span>
+      <span id="me-chip" class="chip"></span>
+    </header>
+
+    <main>
+      <!-- CASA -->
+      <section class="screen" data-tab="home">
+        <p class="hello" id="hello"></p>
+
+        <div class="heart-zone">
+          <button id="ping" class="heart-btn" aria-label="Ti penso">
+            <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 54s-20-12.4-20-27.2C12 19.6 17.4 14 24 14c3.6 0 6.4 1.8 8 4.6C33.6 15.8 36.4 14 40 14c6.6 0 12 5.6 12 12.8C52 41.6 32 54 32 54z"/></svg>
+          </button>
+          <p class="heart-caption">Tocca quando la pensi</p>
+          <p id="last-ping" class="last-ping"></p>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><span id="today-me" class="num">0</span><span class="cap">i tuoi pensieri oggi</span></div>
+          <div class="stat"><span id="today-them" class="num">0</span><span id="today-them-cap" class="cap">i suoi pensieri oggi</span></div>
+        </div>
+
+        <div class="card countdown" id="countdown-card">
+          <p class="card-k">Prossimo abbraccio</p>
+          <div id="countdown" class="countdown-v"></div>
+        </div>
+
+        <div class="card" id="together-card" hidden>
+          <p class="card-k">Insieme da</p>
+          <p id="together" class="big-serif"></p>
+        </div>
+      </section>
+
+      <!-- MESSAGGI -->
+      <section class="screen chat-screen" data-tab="chat" hidden>
+        <div id="chat" class="chat" aria-live="polite"></div>
+        <form id="chat-form" class="composer">
+          <textarea id="chat-input" rows="1" maxlength="2000" placeholder="Scrivi un messaggino…"></textarea>
+          <button class="send" aria-label="Invia">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 21 3l-8.5 18-2-7.5z"/></svg>
+          </button>
+        </form>
+      </section>
+
+      <!-- LETTERE -->
+      <section class="screen" data-tab="letters" hidden>
+        <div class="row-between">
+          <h2>Lettere</h2>
+          <button id="new-letter" class="btn">Scrivi una lettera</button>
+        </div>
+        <div id="letters" class="letters"></div>
+      </section>
+
+      <!-- NOI -->
+      <section class="screen" data-tab="us" hidden>
+        <h2>Noi</h2>
+        <form id="settings" class="settings">
+          <label>Il nome di LUI<input name="name_lui" maxlength="30" placeholder="LUI"></label>
+          <label>Il nome di LEI<input name="name_lei" maxlength="30" placeholder="LEI"></label>
+          <label>Insieme dal<input name="together_since" type="date"></label>
+          <label>Prossimo incontro<input name="next_meeting" type="datetime-local"></label>
+          <button class="btn">Salva</button>
+          <p id="settings-ok" class="ok" role="status"></p>
+        </form>
+        <div class="card soft">
+          <p class="card-k">Notifiche</p>
+          <p class="muted small">Con il sito aperto (anche in un'altra scheda) ti avviso quando arriva qualcosa.</p>
+          <button id="notif" class="btn ghost">Attiva notifiche</button>
+        </div>
+        <button id="logout" class="btn ghost">Cambia profilo</button>
+      </section>
+    </main>
+
+    <nav class="tabs">
+      <button data-go="home" class="on"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.6C5 7.9 6.9 6 9.2 6c1.2 0 2.2.6 2.8 1.6.6-1 1.6-1.6 2.8-1.6C17.1 6 19 7.9 19 10.4 19 15.6 12 20 12 20z"/></svg><span>Casa</span></button>
+      <button data-go="chat"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Messaggi</span><i class="badge" data-badge="chat"></i></button>
+      <button data-go="letters"><svg viewBox="0 0 24 24"><path d="M3 6h18v12H3z M3 6l9 7 9-7"/></svg><span>Lettere</span><i class="badge" data-badge="letters"></i></button>
+      <button data-go="us"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><circle cx="16" cy="10" r="2.5"/><path d="M3.5 19c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5M14 15.2c.6-.4 1.3-.7 2-.7 2 0 3.6 1.3 4.2 3.5"/></svg><span>Noi</span></button>
+    </nav>
+  </div>
+
+  <!-- Lettera: lettura -->
+  <dialog id="letter-view" class="sheet">
+    <article class="paper">
+      <p id="lv-meta" class="paper-meta"></p>
+      <div id="lv-body" class="paper-body"></div>
+      <p id="lv-sign" class="paper-sign"></p>
+    </article>
+    <div class="sheet-actions">
+      <button id="lv-delete" class="btn ghost danger" hidden>Elimina</button>
+      <button class="btn" data-close>Chiudi</button>
+    </div>
+  </dialog>
+
+  <!-- Lettera: scrittura -->
+  <dialog id="letter-write" class="sheet">
+    <form id="letter-form" method="dialog">
+      <h3>Una lettera per te</h3>
+      <textarea id="lw-body" class="paper-input" maxlength="20000" placeholder="Cara…" required></textarea>
+      <label class="small">Da aprire il (facoltativo)
+        <input id="lw-open" type="datetime-local">
+      </label>
+      <p class="muted small">Se scegli una data, la lettera resta sigillata fino ad allora.</p>
+      <div class="sheet-actions">
+        <button type="button" class="btn ghost" data-close>Annulla</button>
+        <button class="btn" value="send">Spedisci</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
