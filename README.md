@@ -1,7 +1,7 @@
 # us ♥
 
-Il nostro posto, anche da lontano. Un sito per due che funziona su telefono,
-tablet e computer, e si può installare come un'app.
+Il nostro posto, anche da lontano. Un sito web per due: si apre dal browser
+(Chrome, Safari…) con un link, su telefono, tablet e computer.
 
 Ci sono due profili fissi, **LUI** e **LEI**, senza account. Volendo si può
 aggiungere un codice segreto condiviso, così chi trova il link per caso non
