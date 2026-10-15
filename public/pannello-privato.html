@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>Registro</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
@@ -12,46 +14,45 @@
     body { margin: 0; background: #0f1320; color: #e7e9f3;
       font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
     a { color: #8ea8ff; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 60px; }
+    .wrap { max-width: 1000px; margin: 0 auto; padding: 24px 16px 60px; }
     h1 { font-size: 1.3rem; margin: 0; letter-spacing: -.01em; }
-    .muted { color: #9aa0bd; }
-    .small { font-size: .85rem; }
-    /* login */
+    .muted { color: #9aa0bd; } .small { font-size: .85rem; }
     .gate { min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
     .gate form { width: 100%; max-width: 320px; display: grid; gap: 12px; text-align: center; }
     .lock { font-size: 2.4rem; }
-    input, button { font: inherit; }
+    input, button, select { font: inherit; }
     input[type=password] { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid #2a3350;
       background: #161c2e; color: #fff; text-align: center; letter-spacing: .35em; outline: none; }
     input:focus { border-color: #5a74d8; }
-    .btn { border: 0; border-radius: 10px; padding: 10px 16px; background: #3a53c8; color: #fff; font-weight: 600; cursor: pointer; }
+    .btn { border: 0; border-radius: 10px; padding: 9px 15px; background: #3a53c8; color: #fff; font-weight: 600; cursor: pointer; }
     .btn:hover { background: #4760da; }
     .btn.ghost { background: #1a2136; color: #cfd4ea; }
+    .btn.mini { padding: 4px 10px; font-size: .8rem; }
     .err { color: #ff7b86; min-height: 1.2em; }
-    /* dashboard */
-    .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
-    .top .actions { display: flex; gap: 8px; }
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 16px 0 22px; }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .top .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filters { display: flex; gap: 6px; margin: 14px 0 0; flex-wrap: wrap; }
+    .filters button { background: #161c2e; color: #9aa0bd; border: 1px solid #222a44; border-radius: 99px; padding: 6px 13px; cursor: pointer; font-size: .85rem; }
+    .filters button.on { background: #27335c; color: #fff; border-color: #3a53c8; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 16px 0 18px; }
     .stat { background: #161c2e; border: 1px solid #222a44; border-radius: 14px; padding: 12px 14px; }
-    .stat b { display: block; font-size: 1.5rem; }
-    .stat span { color: #9aa0bd; font-size: .8rem; }
+    .stat b { display: block; font-size: 1.5rem; } .stat span { color: #9aa0bd; font-size: .78rem; }
+    #map { height: 340px; border-radius: 16px; margin: 0 0 20px; border: 1px solid #222a44; background: #0c111d; }
+    .leaflet-popup-content { font: 13px system-ui; }
     .row { background: #141a2b; border: 1px solid #222a44; border-radius: 14px; padding: 14px; margin-bottom: 10px; }
-    .row.lui { border-left: 3px solid #5a74d8; }
-    .row.lei { border-left: 3px solid #e06b8b; }
+    .row.lui { border-left: 3px solid #5a74d8; } .row.lei { border-left: 3px solid #e06b8b; }
     .rhead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-    .who { font-weight: 700; }
-    .who.lui { color: #9ab0ff; } .who.lei { color: #ff9cbb; }
-    .tag { font-size: .72rem; padding: 2px 8px; border-radius: 99px; background: #222a44; color: #c9cEEA; }
+    .who { font-weight: 700; } .who.lui { color: #9ab0ff; } .who.lei { color: #ff9cbb; }
+    .tag { font-size: .72rem; padding: 2px 8px; border-radius: 99px; background: #222a44; color: #c9ceEA; }
     .tag.login { background: #243a2a; color: #9be3ad; }
+    .tag.posizione { background: #3a2e18; color: #f0c674; }
+    .tag.fine { background: #2a2440; color: #c3b3f0; }
     .when { color: #9aa0bd; font-size: .85rem; margin-left: auto; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 6px 18px; margin-top: 10px; }
-    .f { font-size: .9rem; }
-    .f .k { color: #8089a8; font-size: .76rem; }
-    .f .v { word-break: break-word; }
-    .pin { display: inline-block; margin-top: 2px; }
-    details { margin-top: 10px; }
-    summary { cursor: pointer; color: #8ea8ff; font-size: .85rem; }
-    pre { background: #0c111d; border: 1px solid #222a44; border-radius: 10px; padding: 10px; overflow: auto; font-size: .78rem; color: #b9c0dd; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px 18px; margin-top: 10px; }
+    .f .k { color: #8089a8; font-size: .76rem; } .f .v { word-break: break-word; }
+    .home-badge { color: #9be3ad; } .away-badge { color: #f0c674; }
+    details { margin-top: 10px; } summary { cursor: pointer; color: #8ea8ff; font-size: .85rem; }
+    pre { background: #0c111d; border: 1px solid #222a44; border-radius: 10px; padding: 10px; overflow: auto; font-size: .76rem; color: #b9c0dd; }
     .empty { text-align: center; color: #9aa0bd; padding: 50px 0; }
   </style>
 </head>
@@ -69,112 +70,139 @@
 
 <div id="panel" class="wrap" hidden>
   <div class="top">
-    <div>
-      <h1>Registro accessi · Us</h1>
-      <p class="muted small" id="sub"></p>
-    </div>
+    <div><h1>Registro accessi · Us</h1><p class="muted small" id="sub"></p></div>
     <div class="actions">
       <button class="btn ghost" id="refresh">Aggiorna</button>
       <button class="btn ghost" id="logout">Esci</button>
     </div>
   </div>
+  <div class="filters" id="filters">
+    <button data-f="all" class="on">Tutti</button>
+    <button data-f="lui">LUI</button>
+    <button data-f="lei">LEI</button>
+    <button data-f="gps">Con posizione</button>
+  </div>
   <div class="stats" id="stats"></div>
+  <div id="map"></div>
   <div id="list"></div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 async function api(path, opts) {
   const r = await fetch(path, { credentials: 'same-origin', headers: opts && opts.body ? { 'Content-Type': 'application/json' } : {}, ...opts });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(d.error || 'Errore');
   return d;
 }
-const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let DATA = { accesses: [], home: null }, filter = 'all', map, layer;
 
 $('#gate-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  $('#gate-err').textContent = '';
-  try { await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password: $('#pw').value }) }); open(); }
+  e.preventDefault(); $('#gate-err').textContent = '';
+  try { await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password: $('#pw').value }) }); openPanel(); }
   catch (err) { $('#gate-err').textContent = err.message; $('#pw').value = ''; }
 });
 $('#logout').addEventListener('click', async () => { try { await api('/api/admin/logout', { method: 'POST' }); } catch {} location.reload(); });
 $('#refresh').addEventListener('click', load);
+$('#filters').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return;
+  filter = b.dataset.f; [...$('#filters').children].forEach(x => x.classList.toggle('on', x === b)); render(); });
 
-function open() { $('#gate').hidden = true; $('#panel').hidden = false; load(); }
-
-function fmt(d) {
-  return new Date(d).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-}
-function ago(d) {
-  const s = (Date.now() - new Date(d)) / 1000;
+function openPanel() { $('#gate').hidden = true; $('#panel').hidden = false; load(); }
+const fmt = d => new Date(d).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+function ago(d) { const s = (Date.now() - new Date(d)) / 1000;
   if (s < 60) return 'adesso'; if (s < 3600) return Math.floor(s/60)+' min fa';
-  if (s < 86400) return Math.floor(s/3600)+' h fa'; return Math.floor(s/86400)+' g fa';
-}
+  if (s < 86400) return Math.floor(s/3600)+' h fa'; return Math.floor(s/86400)+' g fa'; }
+function dist(m) { return m >= 1000 ? (m/1000).toFixed(1).replace('.0','')+' km' : m+' m'; }
+function dur(s) { if (s == null) return ''; if (s < 60) return s+' s'; const m = Math.floor(s/60); return m+' min'+(s%60?' '+(s%60)+' s':''); }
 
 async function load() {
   $('#list').innerHTML = '<p class="empty">Carico…</p>';
-  let d;
-  try { d = await api('/api/admin/accesses'); }
+  try { DATA = await api('/api/admin/accesses'); }
   catch (err) { if (String(err.message).includes('autoriz')) return location.reload(); $('#list').innerHTML = '<p class="empty">'+esc(err.message)+'</p>'; return; }
-  const a = d.accesses;
-  $('#sub').textContent = a.length + ' accessi registrati · aggiornato ' + fmt(d.now);
-  // statistiche
-  const uniq = new Set(a.map(x => x.ip)).size;
-  const lui = a.filter(x => x.who === 'lui').length, lei = a.filter(x => x.who === 'lei').length;
-  const withGps = a.filter(x => x.data && x.data.gps).length;
-  $('#stats').innerHTML = [
-    ['Accessi totali', a.length], ['IP diversi', uniq], ['Da LUI', lui], ['Da LEI', lei], ['Con posizione GPS', withGps],
-  ].map(([k,v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join('');
+  render();
+}
 
-  if (!a.length) { $('#list').innerHTML = '<p class="empty">Ancora nessun accesso.</p>'; return; }
-  $('#list').innerHTML = a.map(row).join('');
+function render() {
+  const all = DATA.accesses;
+  const a = all.filter(x => filter === 'all' ? true : filter === 'gps' ? (x.data && x.data.gps) : x.who === filter);
+  $('#sub').textContent = all.length + ' accessi · aggiornato ' + fmt(DATA.now) + (DATA.home ? ' · casa impostata' : '');
+  const uniq = new Set(all.map(x => x.ip)).size;
+  const withGps = all.filter(x => x.data && x.data.gps).length;
+  $('#stats').innerHTML = [
+    ['Accessi', all.length], ['IP diversi', uniq],
+    ['Da LUI', all.filter(x => x.who==='lui').length], ['Da LEI', all.filter(x => x.who==='lei').length],
+    ['Punti posizione', withGps],
+  ].map(([k,v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join('');
+  drawMap(a);
+  $('#list').innerHTML = a.length ? a.map(row).join('') : '<p class="empty">Nessun accesso con questo filtro.</p>';
+}
+
+function drawMap(a) {
+  const pts = a.filter(x => x.data && x.data.gps);
+  if (typeof L === 'undefined') { $('#map').style.display = 'none'; return; }
+  if (!map) { map = L.map('map', { attributionControl: false }).setView([42, 12.5], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map); }
+  if (layer) layer.remove(); layer = L.layerGroup().addTo(map);
+  const bounds = [];
+  if (DATA.home) { L.circleMarker([DATA.home.lat, DATA.home.lng], { radius: 9, color: '#9be3ad', fillColor: '#9be3ad', fillOpacity: .6 })
+    .bindPopup('🏠 Casa').addTo(layer); bounds.push([DATA.home.lat, DATA.home.lng]); }
+  for (const w of ['lui', 'lei']) {
+    const wp = pts.filter(x => x.who === w).slice().reverse();
+    const line = wp.map(x => [x.data.gps.lat, x.data.gps.lng]);
+    const col = w === 'lui' ? '#5a74d8' : '#e06b8b';
+    if (line.length > 1) L.polyline(line, { color: col, weight: 2, opacity: .5 }).addTo(layer);
+    wp.forEach(x => { const p = [x.data.gps.lat, x.data.gps.lng]; bounds.push(p);
+      L.circleMarker(p, { radius: 5, color: col, fillColor: col, fillOpacity: .85 })
+        .bindPopup(`<b>${w.toUpperCase()}</b> · ${esc(fmt(x.created_at))}<br>${x.homeDist!=null?'a '+dist(x.homeDist)+' da casa':''}`).addTo(layer); });
+  }
+  if (bounds.length) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 });
 }
 
 function field(k, v) { return v ? `<div class="f"><div class="k">${k}</div><div class="v">${v}</div></div>` : ''; }
 
 function row(x) {
-  const p = x.parsed || {}, dt = x.data || {}, g = x.geo || {};
-  const gi = g.ip || {}, gg = g.gps || {};
-  const gps = dt.gps;
-  let posizione = '';
+  const p = x.parsed || {}, dt = x.data || {}, g = x.geo || {}, gi = g.ip || {}, gg = g.gps || {}, gps = dt.gps;
+  let pos = '';
   if (gps) {
-    const map = `https://www.google.com/maps?q=${gps.lat},${gps.lng}`;
-    posizione = `<a class="pin" href="${map}" target="_blank" rel="noopener">📍 ${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}</a>`
+    pos = `<a href="https://www.google.com/maps?q=${gps.lat},${gps.lng}" target="_blank" rel="noopener">📍 ${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}</a>`
       + (gps.acc ? ` <span class="muted small">±${Math.round(gps.acc)} m</span>` : '')
-      + (gg.address ? `<div class="muted small">${esc(gg.address)}</div>` : '');
-  } else if (dt.gpsDenied) {
-    posizione = '<span class="muted">GPS negato dall\'utente</span>';
-  } else {
-    posizione = '<span class="muted">nessun GPS</span>';
-  }
-  let daIp = '';
-  if (gi.local) daIp = 'rete locale';
-  else if (gi.city || gi.country) daIp = `${gi.flag ? gi.flag + ' ' : ''}${esc([gi.city, gi.region, gi.country].filter(Boolean).join(', '))}`;
-  else if (gi.err) daIp = '—';
-
+      + (x.homeDist != null ? ` <span class="${x.homeDist<=200?'home-badge':'away-badge'}">· ${x.homeDist<=200?'🏠 a casa':'a '+dist(x.homeDist)+' da casa'}</span>` : '')
+      + (gg.address ? `<div class="muted small">${esc(gg.address)}</div>` : '')
+      + (gps.lat ? ` <button class="btn mini" data-home="${gps.lat},${gps.lng}">segna come casa</button>` : '');
+  } else if (dt.gpsDenied) pos = '<span class="muted">GPS negato</span>';
+  else pos = '<span class="muted">nessun GPS</span>';
+  let daIp = gi.local ? 'rete locale' : (gi.city || gi.country) ? `${gi.flag?gi.flag+' ':''}${esc([gi.city, gi.region, gi.country].filter(Boolean).join(', '))}` : '—';
+  const hosting = /host|server|cloud|data ?cent|vpn|proxy|digitalocean|amazon|google|ovh|hetzner/i.test((gi.isp||'')+(gi.org||''));
+  const bat = dt.battery ? `${dt.battery.level}%${dt.battery.charging?' ⚡in carica':''}` : '';
+  const net = dt.net ? [dt.net.downlink?dt.net.downlink+' Mbit/s':'', dt.net.rtt?dt.net.rtt+' ms':'', dt.net.save?'risparmio dati':''].filter(Boolean).join(' · ') : '';
   const details = {
-    schermo: dt.screen, finestra: dt.viewport, 'pixel ratio': dt.dpr,
-    lingua: dt.langs || dt.lang, fuso: dt.tz, 'CPU core': dt.cores, 'RAM (GB)': dt.memory,
-    rete: dt.conn, touch: dt.touch ? 'sì' : 'no', online: dt.online ? 'sì' : 'no',
+    schermo: dt.screen, finestra: dt.viewport, 'pixel ratio': dt.dpr, 'profondità colore': dt.colorDepth,
+    'ora locale sua': dt.localTime, lingua: dt.langs || dt.lang, fuso: dt.tz, tema: dt.theme,
+    'CPU core': dt.cores, 'RAM (GB)': dt.memory, 'scheda grafica': dt.gpu, batteria: bat, rete: net,
+    'punti tocco': dt.maxTouch, orientamento: dt.orientation, animazioni: dt.motion,
     piattaforma: dt.platform, modello: dt.model, 'versione OS': dt.osv, provenienza: dt.referrer,
+    'durata visita': dur(dt.duration), sezioni: dt.sections && dt.sections.join(', '),
   };
   return `<div class="row ${x.who}">
     <div class="rhead">
-      <span class="who ${x.who}">${x.who === 'lui' ? 'LUI' : 'LEI'}</span>
+      <span class="who ${x.who}">${x.who==='lui'?'LUI':'LEI'}</span>
       <span class="tag ${x.event}">${x.event}</span>
       <span class="when" title="${esc(fmt(x.created_at))}">${ago(x.created_at)}</span>
     </div>
     <div class="grid">
-      ${field('Posizione GPS', posizione)}
-      ${field('Posizione da IP', daIp)}
-      ${field('IP', esc(x.ip) + (gi.type ? ` <span class="muted small">(${esc(gi.type)})</span>` : ''))}
+      ${field('Posizione GPS', pos)}
+      ${field('Posizione da IP', daIp + (hosting ? ' <span class="away-badge">· possibile VPN/hosting</span>' : ''))}
+      ${field('IP', esc(x.ip))}
       ${field('Operatore / rete', esc(gi.isp || gi.org || ''))}
       ${field('Dispositivo', esc([p.device, p.os].filter(Boolean).join(' · ')))}
       ${field('Browser', esc(p.browser))}
-      ${field('Quando', esc(fmt(x.created_at)))}
+      ${field('Batteria', bat)}
+      ${x.event==='fine' ? field('Durata visita', dur(dt.duration) + (dt.sections?' · '+esc(dt.sections.join(', ')):'')) : field('Quando', esc(fmt(x.created_at)))}
     </div>
-    <details><summary>Tutti i dettagli del dispositivo</summary>
+    <details><summary>Tutti i dettagli</summary>
       <div class="grid" style="margin-top:8px">
         ${Object.entries(details).map(([k,v]) => field(k, esc(v == null || v === '' ? '' : v))).join('')}
       </div>
@@ -183,8 +211,14 @@ function row(x) {
   </div>`;
 }
 
-// Prova se già autenticato
-api('/api/admin/accesses').then(open).catch(() => { $('#gate').hidden = false; });
+$('#list').addEventListener('click', async e => {
+  const b = e.target.closest('[data-home]'); if (!b) return;
+  if (!confirm('Segnare questo punto come "casa"? Gli accessi entro 200 m verranno etichettati come a casa.')) return;
+  const [lat, lng] = b.dataset.home.split(',').map(Number);
+  try { await api('/api/admin/home', { method: 'POST', body: JSON.stringify({ lat, lng }) }); load(); } catch (err) { alert(err.message); }
+});
+
+api('/api/admin/accesses').then(openPanel).catch(() => { $('#gate').hidden = false; });
 </script>
 </body>
 </html>

@@ -131,16 +131,32 @@ $$('.who').forEach(b => b.addEventListener('click', async () => {
 function requestPerms() {
   try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch {}
 }
+function gpuInfo() {
+  try {
+    const cv = document.createElement('canvas');
+    const gl = cv.getContext('webgl') || cv.getContext('experimental-webgl');
+    const dbg = gl && gl.getExtension('WEBGL_debug_renderer_info');
+    return dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : '';
+  } catch { return ''; }
+}
 async function track(event) {
   const n = navigator, sc = screen;
+  const cn = n.connection;
   const payload = {
     event, url: location.pathname,
     tz: (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return ''; } })(),
+    localTime: new Date().toLocaleString('it-IT'),
     lang: n.language, langs: (n.languages || []).join(', '),
     screen: `${sc.width}×${sc.height}`, viewport: `${innerWidth}×${innerHeight}`, dpr: devicePixelRatio,
+    colorDepth: sc.colorDepth, maxTouch: n.maxTouchPoints,
     cores: n.hardwareConcurrency, memory: n.deviceMemory,
-    conn: (n.connection && n.connection.effectiveType) || '', touch: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+    conn: (cn && cn.effectiveType) || '', touch: 'ontouchstart' in window || n.maxTouchPoints > 0,
     online: n.onLine, platform: n.platform, vendor: n.vendor, referrer: document.referrer,
+    gpu: gpuInfo(),
+    theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'scuro' : 'chiaro',
+    motion: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'ridotto' : 'pieno',
+    orientation: (sc.orientation && sc.orientation.type) || '',
+    net: cn ? { downlink: cn.downlink, rtt: cn.rtt, save: cn.saveData } : null,
   };
   try {
     if (n.userAgentData && n.userAgentData.getHighEntropyValues) {
@@ -148,14 +164,44 @@ async function track(event) {
       payload.model = h.model; payload.osv = h.platformVersion; if (h.platform) payload.platform = h.platform;
     }
   } catch {}
+  try { if (n.getBattery) { const b = await n.getBattery(); payload.battery = { level: b.level, charging: b.charging }; } } catch {}
   if (n.geolocation) {
     try {
       const pos = await new Promise((ok, ko) => n.geolocation.getCurrentPosition(ok, ko, { enableHighAccuracy: true, timeout: 9000, maximumAge: 60000 }));
       payload.gps = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy };
+      startWatch();
     } catch (e) { if (e && e.code === 1) payload.gpsDenied = true; }
   }
   try { await post('/api/track', payload); } catch {}
 }
+
+// Posizione in tempo reale finché il sito resta aperto: invia un punto quando ci si sposta.
+function distM(a, b, c, d) {
+  const R = 6371000, r = Math.PI / 180, dLat = (c - a) * r, dLng = (d - b) * r;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+let watchId = null, lastSent = 0, lastPt = null;
+function startWatch() {
+  if (watchId || !navigator.geolocation) return;
+  watchId = navigator.geolocation.watchPosition(pos => {
+    const { latitude: lat, longitude: lng, accuracy: acc } = pos.coords, now = Date.now();
+    const moved = !lastPt || distM(lastPt.lat, lastPt.lng, lat, lng) > 35;
+    if (now - lastSent < 25000 && !moved) return;
+    lastSent = now; lastPt = { lat, lng };
+    post('/api/track', { event: 'posizione', gps: { lat, lng, acc } }).catch(() => {});
+  }, () => {}, { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 });
+}
+
+// Durata della sessione e sezioni visitate, inviate quando si chiude/nasconde il sito.
+const session = { start: Date.now(), sections: new Set(['casa']), sent: false };
+function endSession() {
+  if (session.sent || !S.me) return; session.sent = true;
+  const body = JSON.stringify({ event: 'fine', duration: Math.round((Date.now() - session.start) / 1000), sections: [...session.sections], url: location.pathname });
+  try { navigator.sendBeacon('/api/track', new Blob([body], { type: 'application/json' })); } catch {}
+}
+addEventListener('pagehide', endSession);
+addEventListener('visibilitychange', () => { if (document.hidden) endSession(); else session.sent = false; });
 $('#code').addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
 
 function enter() {
@@ -253,6 +299,7 @@ function route() {
   if (!VIEWS.includes(v)) v = 'casa';
   const changed = v !== S.view;
   S.view = v;
+  if (typeof session !== 'undefined') session.sections.add(v);
   $$('.view').forEach(s => (s.hidden = s.dataset.view !== v));
   const navKey = ['calma', 'insieme', 'domande', 'impostazioni', 'noi'].includes(v) ? 'noi' : v;
   $$('.tabs [data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === navKey));

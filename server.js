@@ -364,7 +364,7 @@ app.get('/api/state', auth, wrap(async (req, res) => {
     ver,
     now: new Date().toISOString(),
     items: items.map(i => view(i, req.who, answeredDays)),
-    settings: await store.getSettings(),
+    settings: Object.fromEntries(Object.entries(await store.getSettings()).filter(([k]) => !k.startsWith('admin_'))),
     partner: { online: now - p.seen < 25000, seen: p.seen ? new Date(p.seen).toISOString() : null, typing: now - p.typing < 6000 },
   });
 }));
@@ -511,23 +511,39 @@ app.put('/api/settings', auth, wrap(async (req, res) => {
 /* ------------------------------ registro accessi ------------------------------ */
 
 const str = (v, n) => (v == null ? '' : String(v)).slice(0, n);
+const num = v => (Number.isFinite(Number(v)) ? Number(v) : null);
+const EVENTS = ['login', 'apertura', 'posizione', 'fine'];
+
+// Distanza in metri tra due coordinate (Haversine).
+function meters(aLat, aLng, bLat, bLng) {
+  const R = 6371000, r = Math.PI / 180;
+  const dLat = (bLat - aLat) * r, dLng = (bLng - aLng) * r;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * r) * Math.cos(bLat * r) * Math.sin(dLng / 2) ** 2;
+  return Math.round(2 * R * Math.asin(Math.sqrt(x)));
+}
 
 // Il client manda le info del dispositivo e, col permesso, la posizione GPS.
 app.post('/api/track', auth, wrap(async (req, res) => {
   const c = req.body || {};
   const data = {
-    tz: str(c.tz, 60), lang: str(c.lang, 20), langs: str(c.langs, 120),
-    screen: str(c.screen, 20), viewport: str(c.viewport, 20), dpr: Number(c.dpr) || null,
-    cores: Number(c.cores) || null, memory: Number(c.memory) || null,
+    tz: str(c.tz, 60), lang: str(c.lang, 20), langs: str(c.langs, 120), localTime: str(c.localTime, 40),
+    screen: str(c.screen, 20), viewport: str(c.viewport, 20), dpr: num(c.dpr),
+    cores: num(c.cores), memory: num(c.memory), colorDepth: num(c.colorDepth), maxTouch: num(c.maxTouch),
     conn: str(c.conn, 20), touch: !!c.touch, online: c.online !== false,
-    platform: str(c.platform, 60), model: str(c.model, 80), osv: str(c.osv, 40),
-    vendor: str(c.vendor, 60), referrer: str(c.referrer, 300), url: str(c.url, 200),
-    gpsDenied: !!c.gpsDenied,
+    platform: str(c.platform, 60), model: str(c.model, 80), osv: str(c.osv, 40), vendor: str(c.vendor, 60),
+    gpu: str(c.gpu, 140), theme: str(c.theme, 10), motion: str(c.motion, 12), orientation: str(c.orientation, 24),
+    referrer: str(c.referrer, 300), url: str(c.url, 200), gpsDenied: !!c.gpsDenied,
+    battery: c.battery && typeof c.battery.level === 'number'
+      ? { level: Math.round(c.battery.level * 100), charging: !!c.battery.charging } : null,
+    net: c.net ? { downlink: num(c.net.downlink), rtt: num(c.net.rtt), save: !!c.net.save } : null,
+    sections: Array.isArray(c.sections) ? c.sections.slice(0, 20).map(s => str(s, 16)) : null,
+    duration: num(c.duration),
   };
   if (c.gps && typeof c.gps.lat === 'number' && typeof c.gps.lng === 'number') {
-    data.gps = { lat: c.gps.lat, lng: c.gps.lng, acc: Number(c.gps.acc) || null };
+    data.gps = { lat: c.gps.lat, lng: c.gps.lng, acc: num(c.gps.acc) };
   }
-  await store.addAccess({ who: req.who, event: c.event === 'login' ? 'login' : 'apertura', ip: clientIp(req), ua: req.get('user-agent') || '', data });
+  const event = EVENTS.includes(c.event) ? c.event : 'apertura';
+  await store.addAccess({ who: req.who, event, ip: clientIp(req), ua: req.get('user-agent') || '', data });
   res.json({ ok: true });
 }));
 
@@ -550,18 +566,31 @@ app.post('/api/admin/logout', (req, res) => {
 });
 
 app.get('/api/admin/accesses', adminAuth, wrap(async (req, res) => {
-  const list = await store.listAccess(500);
+  const list = await store.listAccess(800);
+  const settings = await store.getSettings();
+  let home = null;
+  if (settings.admin_home) { const [a, b] = settings.admin_home.split(',').map(Number); if (isFinite(a) && isFinite(b)) home = { lat: a, lng: b }; }
   let budget = 30; // limite di ricerche esterne per richiesta; il resto è già in cache/salvato
   for (const rec of list) {
-    if (rec.geo || budget <= 0) continue;
-    budget--;
-    const geo = { ip: await lookupIp(rec.ip) };
-    if (rec.data && rec.data.gps) geo.gps = await lookupCoords(rec.data.gps.lat, rec.data.gps.lng);
-    rec.geo = geo;
-    try { await store.setAccessGeo(rec.id, geo); } catch {}
+    if (!rec.geo && budget > 0) {
+      budget--;
+      const geo = { ip: await lookupIp(rec.ip) };
+      if (rec.data && rec.data.gps) geo.gps = await lookupCoords(rec.data.gps.lat, rec.data.gps.lng);
+      rec.geo = geo;
+      try { await store.setAccessGeo(rec.id, geo); } catch {}
+    }
+    rec.parsed = parseUA(rec.ua);
+    if (home && rec.data && rec.data.gps) rec.homeDist = meters(home.lat, home.lng, rec.data.gps.lat, rec.data.gps.lng);
   }
-  for (const rec of list) rec.parsed = parseUA(rec.ua);
-  res.json({ accesses: list, now: new Date().toISOString() });
+  res.json({ accesses: list, home, now: new Date().toISOString() });
+}));
+
+app.post('/api/admin/home', adminAuth, wrap(async (req, res) => {
+  if (req.body.clear) { await store.setSetting('admin_home', ''); return res.json({ ok: true, home: null }); }
+  const lat = Number(req.body.lat), lng = Number(req.body.lng);
+  if (!isFinite(lat) || !isFinite(lng)) return bad(res, 'Coordinate non valide');
+  await store.setSetting('admin_home', lat + ',' + lng);
+  res.json({ ok: true, home: { lat, lng } });
 }));
 
 app.get('/healthz', (req, res) => res.send('ok'));
